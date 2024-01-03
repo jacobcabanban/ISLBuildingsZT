@@ -15,10 +15,10 @@ using RevitServices.Persistence;
 
 namespace ISLBuildings
 {
+    //[MultiReturn(new[]{"Output1", "Output2", "Output3"})]
     [IsVisibleInDynamoLibrary(false)]
     internal class ClassTemplate
     {
-
         public static void SampleMethod()
         {
             // Get current document
@@ -32,12 +32,5 @@ namespace ISLBuildings
             TransactionManager.Instance.TransactionTaskDone();
 
         }
-
-        
-
-
-
-
-
     }
 }
