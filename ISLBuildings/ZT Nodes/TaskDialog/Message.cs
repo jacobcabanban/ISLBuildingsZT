@@ -43,18 +43,11 @@
         /// <returns>Contact information for technical support.</returns>
         public static string ISLRevitContact()
         {
-            var contactInfo = "For technical inquiries, please contact:\napym@islengineering.com\njcabanban@islengineering.com\njperras@islengineering.com";
+            var contactInfo = "For technical inquiries or help, please contact:\napym@islengineering.com\njcabanban@islengineering.com\njperras@islengineering.com";
             return contactInfo;
         }
 
         #endregion
-
-
-
-
-
-
-
 
     }
 

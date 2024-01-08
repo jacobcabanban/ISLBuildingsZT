@@ -13,12 +13,14 @@ using Revit.GeometryConversion;
 using RevitServices.Transactions;
 using RevitServices.Persistence;
 
-namespace ISLBuildings
+namespace ISL_ZeroTouch
 {
     //[MultiReturn(new[]{"Output1", "Output2", "Output3"})]
     [IsVisibleInDynamoLibrary(false)]
     internal class ClassTemplate
     {
+        
+        #region Public Methods
         public static void SampleMethod()
         {
             // Get current document
@@ -32,5 +34,7 @@ namespace ISLBuildings
             TransactionManager.Instance.TransactionTaskDone();
 
         }
+
+        #endregion
     }
 }
