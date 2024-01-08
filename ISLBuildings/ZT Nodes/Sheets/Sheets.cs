@@ -35,18 +35,18 @@ namespace ISL_ZeroTouch
 
         #region Public Methods
 
-        #region AddRevisionToSheet
+        #region Add Revision to Sheet
 
         /// <summary>
-        /// Add selected revision to a collection of sheets.
+        /// Add selected revision to a collection of unwrappedSheets.
         /// </summary>
         /// <param name="sheets">The sheet/s from which the revision is added.</param>
         /// <param name="revision">The revision to add.</param>
-        /// /// <param name="runNode">Boolean to run node.</param>
+        /// /// <param name="isRun">Boolean to run node.</param>
         public static void AddRevisionToSheet(
             ICollection<Revit.Elements.Element> sheets,
             Revit.Elements.Element revision,
-            bool runNode = false)
+            bool isRun = false)
         {
             // Get current document
             Document doc = DocumentManager.Instance.CurrentDBDocument;
@@ -66,7 +66,7 @@ namespace ISL_ZeroTouch
                 // Get additional revision Id's
                 var additionalRevisionIds = sheet.GetAdditionalRevisionIds();
 
-                if (!additionalRevisionIds.Contains(revisionId) && runNode)
+                if (!additionalRevisionIds.Contains(revisionId) && isRun)
                 {
                     // New transaction
                     TransactionManager.Instance.ForceCloseTransaction();
@@ -86,53 +86,156 @@ namespace ISL_ZeroTouch
 
         #endregion
 
-        #region RemoveRevisionFromSheet
+
+        #region Remove Revision from Sheet
 
         /// <summary>
-        /// Remove selected revision from a collection of sheets.
+        /// Remove selected revision from a collection of unwrappedSheets.
         /// </summary>
-        /// <param name="sheets">The sheet/s from which the revision is removed..</param>
-        /// <param name="revision">The revision to remove.</param>
+        /// <param name="_sheets">The sheet/s from which the revision is removed..</param>
+        /// <param name="_revision">The revision to remove.</param>
         /// /// <param name="runNode">Boolean to run node.</param>
         public static void DeleteRevisionFromSheet(
-            ICollection<Revit.Elements.Element> sheets,
-            Revit.Elements.Element revision,
+            ICollection<Revit.Elements.Element> _sheets,
+            Revit.Elements.Element _revision,
             bool runNode = false)
         {
             // Get current document
             Document doc = DocumentManager.Instance.CurrentDBDocument;
 
-            // Unwrap elements
-            var unwrappedSheets = sheets.UnwrapCollection();
-            var unwrappedRevision = revision.UnwrapElement();
+            // Unwrap sheet elements and cast as a Revit DB ViewSheet
+            var unwrappedSheets = _sheets.UnwrapCollection()
+                                         .Cast<ViewSheet>()
+                                         .ToList();
 
-            // Get element Id of selected revision
-            var revisionId = unwrappedRevision.Id;
+            // Unwrap revision element to delete and cast as a Revit DB Revision
+            var unwrappedRevision = _revision.UnwrapElement() as Autodesk.Revit.DB.Revision;
 
-            foreach (var element in unwrappedSheets)
+            // Revision to delete casted as Revit DB Element Id
+            var revisionIdToDelete = unwrappedRevision.Id;
+
+            // Empty list containining all revisions elements (revisions or clouds) to delete 
+            var revisionIDsToDelete = new List<ElementId>();
+
+            if (unwrappedSheets?.Any() ?? false)
             {
-                // Cast unwrapped element as sheet
-                var sheet = element as ViewSheet;
+                // Deletes revision clouds on views placed on unwrappedSheets
+                #region Revision Clouds from Other Views 
 
-                // Get additional revision Id's
-                var allRevisionIds = sheet.GetAllRevisionIds();
-
-                if (allRevisionIds.Contains(revisionId) && runNode)
+                // Remove revision clouds from the views that are on the current sheet, if any
+                foreach (var sheet in unwrappedSheets)
                 {
-                    // New transaction
-                    TransactionManager.Instance.ForceCloseTransaction();
-                    TransactionManager.Instance.EnsureInTransaction(doc);
+                    // Empty list of revision cloud Ids (to delete)
+                    var revisionCloudIDsToDeleteFromViews = new List<ElementId>();
 
-                    // Add revision to existing list
-                    allRevisionIds.Remove(revisionId);
+                    // Get view Id's of views currently placed on sheet (if any)
+                    var viewIdsOnSheet = sheet.GetAllPlacedViews().ToList();
 
-                    // Update revision schedule of current sheet
-                    sheet.SetAdditionalRevisionIds(allRevisionIds);
+                    if (viewIdsOnSheet?.Any() ?? false)
+                    {
+                        // Get view elements from their Id's
+                        var viewElementsOnSheet = viewIdsOnSheet.Select(x => doc.GetElement(x)).ToList();
 
-                    // End transaction
-                    TransactionManager.Instance.TransactionTaskDone();
+                        foreach (var viewId in viewIdsOnSheet)
+                        {
+                            // Get all revision cloud Id's in current view
+                            var revisionCloudIDsOnSheet = Utils.GetIdOfElementsInView
+                                <Autodesk.Revit.DB.RevisionCloud>(doc, viewId);
+
+                            if (revisionCloudIDsOnSheet?.Any() ?? false)
+                            {
+                                // Get all  revision cloud Id's that match the revision to delete
+                                revisionCloudIDsToDeleteFromViews.AddRange(revisionCloudIDsOnSheet
+                                                                 .Select(x => doc.GetElement(x))
+                                                                 .Cast<Autodesk.Revit.DB.RevisionCloud>()
+                                                                 .Where(x => x.RevisionId == revisionIdToDelete)
+                                                                 .Select(x => x.Id));
+                            }
+                        }
+
+                        if (revisionCloudIDsToDeleteFromViews?.Any() ?? false)
+                        {
+                            // Append element Id's
+                            revisionIDsToDelete.AddRange(revisionCloudIDsToDeleteFromViews);
+                        }
+                    }
                 }
+
+                #endregion
+
+                // Deletes revision clouds placed directly on unwrappedSheets
+                #region Revision Clouds On Sheets 
+
+                foreach (var sheet in unwrappedSheets)
+                {
+                    // Empty list of revision cloud Ids (to delete)
+                    var revisionCloudIdsOnSheetToDelete = new List<ElementId>();
+
+                    // Get all revision cloud Id's that match revision to delete
+                    revisionCloudIdsOnSheetToDelete = new FilteredElementCollector(doc, sheet.Id)
+                                                            .OfCategory(BuiltInCategory.OST_RevisionClouds)
+                                                            .WhereElementIsNotElementType()
+                                                            .Cast<Autodesk.Revit.DB.RevisionCloud>()
+                                                            .Where(x => x.RevisionId == revisionIdToDelete)
+                                                            .Select(x => x.Id)
+                                                            .ToList();
+
+                    // Append element Id's
+                    if (revisionCloudIdsOnSheetToDelete?.Any() ?? false)
+                    {
+                        revisionIDsToDelete.AddRange(revisionCloudIdsOnSheetToDelete);
+                    }
+
+                }
+
+                #endregion
+
+                // Delete revision numbers added explicitly to unwrappedSheets
+                #region Additional Revisions on Sheet
+
+                foreach (var sheet in unwrappedSheets)
+                {
+                    // Get additional revisions on sheet, if any
+                    var extraRevisionIdsOnSheet = sheet.GetAdditionalRevisionIds()?
+                                                       .ToList() ?? new List<ElementId>();
+
+                    // Create a new list of revisions without the selected revision 
+                    var newExtraRevisionsOnSheet = extraRevisionIdsOnSheet
+                                                       .Except(new List<ElementId> { revisionIdToDelete })
+                                                       .ToList();
+
+                    // Set the updated additional revision ids
+                    if (!extraRevisionIdsOnSheet.SequenceEqual(newExtraRevisionsOnSheet) && runNode)
+                    {
+                        // New transaction
+                        TransactionManager.Instance.ForceCloseTransaction();
+                        TransactionManager.Instance.EnsureInTransaction(doc);
+
+                        sheet.SetAdditionalRevisionIds(newExtraRevisionsOnSheet);
+
+                        TransactionManager.Instance.TransactionTaskDone();
+                    }
+
+                }
+
+                #endregion
             }
+
+            // Delete revision elements from unwrappedSheets
+            if (revisionIDsToDelete?.Any() ?? false && runNode)
+            {
+                // New transaction
+                TransactionManager.Instance.ForceCloseTransaction();
+                TransactionManager.Instance.EnsureInTransaction(doc);
+
+                foreach (var revIds in revisionIDsToDelete)
+                    {
+                        doc.Delete(revIds);
+                    }
+
+                TransactionManager.Instance.TransactionTaskDone();
+            }
+
         }
 
         #endregion
