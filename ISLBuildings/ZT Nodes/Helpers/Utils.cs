@@ -27,9 +27,9 @@ namespace ISL_ZeroTouch
         /// Method that collects all elements of a particular Revit DB type
         /// from a Revit DB view element (Inherits from the View class).
         /// </summary>
-        /// <typeparam name="T">Any Revit DB type.</typeparam>
-        /// <param name="doc">Revit model document.</param>
-        /// <param name="viewId"></param>
+        /// <typeparam name="T"> Any Revit DB type. </typeparam>
+        /// <param name="doc"> Revit model document. </param>
+        /// <param name="viewId"> Element Id of view. </param>
         /// <returns></returns>
         public static List<ElementId> GetIdOfElementsInView<T>(Document doc, ElementId viewId) 
                                                             where T : Autodesk.Revit.DB.Element
