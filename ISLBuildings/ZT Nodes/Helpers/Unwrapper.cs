@@ -17,16 +17,16 @@
         /// Extension method to unwrap a single Dynamo Revit element.
         /// </summary>
         /// <param name="wrappedElement"> A Revit element from Dynamo selection. </param>
-        /// <returns> Collection of unwrapped Revit elements. </returns>
+        /// <returns> Single and unwrapped Revit element. </returns>
         public static Autodesk.Revit.DB.Element UnwrapElement(
             this Revit.Elements.Element wrappedElement) => wrappedElement.InternalElement;
-       
+
 
         /// <summary>
         /// Extension method to unwrap a list of Dynamo Revit elements.
         /// </summary>
         /// <param name="wrappedList"> A list of Revit element/s from Dynamo selection. </param>
-        /// <returns></returns>
+        /// <returns> Collection of unwrapped Revit elements. </returns>
         public static IEnumerable<Autodesk.Revit.DB.Element> UnwrapCollection(
             this ICollection<Revit.Elements.Element> wrappedList)
             => wrappedList.Select(x => x.InternalElement);
