@@ -50,7 +50,7 @@ namespace ISL_ZeroTouch
         {
             // Get current document
             Document doc = DocumentManager.Instance.CurrentDBDocument;
-            
+
             // Unwrap elements
             var unwrappedSheets = sheets.UnwrapCollection();
             var unwrappedRevision = revision.UnwrapElement();
@@ -58,30 +58,38 @@ namespace ISL_ZeroTouch
             // Get element Id of selected revision
             var revisionId = unwrappedRevision.Id;
 
-            foreach (var element in unwrappedSheets)
+            if (!(unwrappedSheets?.Any() ?? false)) return;
+            if (unwrappedRevision == null) return;
+
+            try
             {
-                // Cast unwrapped element as sheet
-                var sheet = element as ViewSheet;
-
-                // Get additional revision Id's
-                var additionalRevisionIds = sheet.GetAdditionalRevisionIds();
-
-                if (!additionalRevisionIds.Contains(revisionId) && isRun)
+                TransactionManager.Instance.EnsureInTransaction(doc);
+                foreach (var element in unwrappedSheets)
                 {
-                    // New transaction
-                    TransactionManager.Instance.ForceCloseTransaction();
-                    TransactionManager.Instance.EnsureInTransaction(doc);
+                    // Cast unwrapped element as sheet
+                    var sheet = element as ViewSheet;
 
-                    // Add revision to existing list
-                    additionalRevisionIds.Add(revisionId);
+                    // Get additional revision Id's
+                    var additionalRevisionIds = sheet.GetAdditionalRevisionIds();
 
-                    // Update revision schedule of current sheet
-                    sheet.SetAdditionalRevisionIds(additionalRevisionIds);
+                    if (!additionalRevisionIds.Contains(revisionId) && isRun)
+                    {
+                        // Add revision to existing list
+                        additionalRevisionIds.Add(revisionId);
 
-                    // End transaction
-                    TransactionManager.Instance.TransactionTaskDone();
+                        // Update revision schedule of current sheet
+                        sheet.SetAdditionalRevisionIds(additionalRevisionIds);
+                    }
                 }
+
+                TransactionManager.Instance.TransactionTaskDone();
             }
+            catch (Exception ex)
+            {
+                TransactionManager.Instance.ForceCloseTransaction();
+                throw new Exception($"ISL_ZeroTouch.AddRevisionToSheet: {ex.Message}");
+            }
+            
         }
 
         #endregion
@@ -94,11 +102,11 @@ namespace ISL_ZeroTouch
         /// </summary>
         /// <param name="_sheets">The sheet/s from which the revision is removed..</param>
         /// <param name="_revision">The revision to remove.</param>
-        /// /// <param name="runNode">Boolean to run node.</param>
+        /// /// <param name="isRun">Boolean to run node.</param>
         public static void DeleteRevisionFromSheet(
             ICollection<Revit.Elements.Element> _sheets,
             Revit.Elements.Element _revision,
-            bool runNode = false)
+            bool isRun = false)
         {
             // Get current document
             Document doc = DocumentManager.Instance.CurrentDBDocument;
@@ -117,8 +125,19 @@ namespace ISL_ZeroTouch
             // Empty list containining all revisions elements (revisions or clouds) to delete 
             var revisionIDsToDelete = new List<ElementId>();
 
-            if (unwrappedSheets?.Any() ?? false)
+            if (!(unwrappedSheets?.Any() ?? false)) return;
+            if (unwrappedRevision == null) return;
+
+            try
             {
+                TransactionManager.Instance.EnsureInTransaction(doc);
+
+                // Update revision properties
+                unwrappedRevision.Visibility = RevisionVisibility.CloudAndTagVisible;
+                unwrappedRevision.Issued = false;
+
+                doc.Regenerate(); // Regenerate the document to update changes
+
                 // Deletes revision clouds on views placed on unwrappedSheets
                 #region Revision Clouds from Other Views 
 
@@ -131,34 +150,33 @@ namespace ISL_ZeroTouch
                     // Get view Id's of views currently placed on sheet (if any)
                     var viewIdsOnSheet = sheet.GetAllPlacedViews().ToList();
 
-                    if (viewIdsOnSheet?.Any() ?? false)
+                    if (!(viewIdsOnSheet?.Any() ?? false)) continue;
+
+                    // Get view elements from their Id's
+                    var viewElementsOnSheet = viewIdsOnSheet.Select(x => doc.GetElement(x)).ToList();
+
+                    foreach (var viewId in viewIdsOnSheet)
                     {
-                        // Get view elements from their Id's
-                        var viewElementsOnSheet = viewIdsOnSheet.Select(x => doc.GetElement(x)).ToList();
+                        // Get all revision cloud Id's in current view
+                        var revisionCloudIDsOnSheet = Utils.GetIdOfElementsInView
+                            <Autodesk.Revit.DB.RevisionCloud>(doc, viewId);
 
-                        foreach (var viewId in viewIdsOnSheet)
-                        {
-                            // Get all revision cloud Id's in current view
-                            var revisionCloudIDsOnSheet = Utils.GetIdOfElementsInView
-                                <Autodesk.Revit.DB.RevisionCloud>(doc, viewId);
+                        if (!(revisionCloudIDsOnSheet?.Any() ?? false)) continue;
 
-                            if (revisionCloudIDsOnSheet?.Any() ?? false)
-                            {
-                                // Get all  revision cloud Id's that match the revision to delete
-                                revisionCloudIDsToDeleteFromViews.AddRange(revisionCloudIDsOnSheet
-                                                                 .Select(x => doc.GetElement(x))
-                                                                 .Cast<Autodesk.Revit.DB.RevisionCloud>()
-                                                                 .Where(x => x.RevisionId == revisionIdToDelete)
-                                                                 .Select(x => x.Id));
-                            }
-                        }
-
-                        if (revisionCloudIDsToDeleteFromViews?.Any() ?? false)
-                        {
-                            // Append element Id's
-                            revisionIDsToDelete.AddRange(revisionCloudIDsToDeleteFromViews);
-                        }
+                        // Get all  revision cloud Id's that match the revision to delete
+                        revisionCloudIDsToDeleteFromViews.AddRange(revisionCloudIDsOnSheet
+                                                         .Select(x => doc.GetElement(x))
+                                                         .Cast<Autodesk.Revit.DB.RevisionCloud>()
+                                                         .Where(x => x.RevisionId == revisionIdToDelete)
+                                                         .Select(x => x.Id));
                     }
+
+                    if (revisionCloudIDsToDeleteFromViews?.Any() ?? false)
+                    {
+                        // Append element Id's
+                        revisionIDsToDelete.AddRange(revisionCloudIDsToDeleteFromViews);
+                    }
+
                 }
 
                 #endregion
@@ -199,43 +217,39 @@ namespace ISL_ZeroTouch
                     var extraRevisionIdsOnSheet = sheet.GetAdditionalRevisionIds()?
                                                        .ToList() ?? new List<ElementId>();
 
+                    if (!extraRevisionIdsOnSheet.Any()) continue;
+
                     // Create a new list of revisions without the selected revision 
                     var newExtraRevisionsOnSheet = extraRevisionIdsOnSheet
                                                        .Except(new List<ElementId> { revisionIdToDelete })
                                                        .ToList();
 
                     // Set the updated additional revision ids
-                    if (!extraRevisionIdsOnSheet.SequenceEqual(newExtraRevisionsOnSheet) && runNode)
+                    if (!extraRevisionIdsOnSheet.SequenceEqual(newExtraRevisionsOnSheet) && isRun)
                     {
-                        // New transaction
-                        TransactionManager.Instance.ForceCloseTransaction();
-                        TransactionManager.Instance.EnsureInTransaction(doc);
-
                         sheet.SetAdditionalRevisionIds(newExtraRevisionsOnSheet);
-
-                        TransactionManager.Instance.TransactionTaskDone();
                     }
 
                 }
 
                 #endregion
-            }
 
-            // Delete revision elements from unwrappedSheets
-            if (revisionIDsToDelete?.Any() ?? false && runNode)
-            {
-                // New transaction
-                TransactionManager.Instance.ForceCloseTransaction();
-                TransactionManager.Instance.EnsureInTransaction(doc);
-
-                foreach (var revIds in revisionIDsToDelete)
+                // Delete revision elements from unwrappedSheets
+                if (revisionIDsToDelete?.Any() ?? false && isRun)
+                {
+                    foreach (var revIds in revisionIDsToDelete)
                     {
                         doc.Delete(revIds);
                     }
+                }
 
                 TransactionManager.Instance.TransactionTaskDone();
             }
-
+            catch (Exception ex)
+            {
+                TransactionManager.Instance.ForceCloseTransaction();
+                throw new Exception($"An error occured in ISL_ZeroTouch.DeleteRevisionFromSheet: {ex.Message}");
+            }
         }
 
         #endregion
