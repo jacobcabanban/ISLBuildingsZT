@@ -15,6 +15,18 @@ using RevitServices.Persistence;
 
 namespace ISL_ZeroTouch
 {
+    ////Instead of the name of the Method:
+    //[NodeName(“NodeName”)]
+
+    ////Instead of the namespace and class names, use a ‘.’ to create a subcategory:
+    //[NodeCategory(“NodeName.Category")]
+
+    ////Provide a node description:
+    //[NodeDescription(“Node Description")]
+
+    ////Tag design script compatibility:
+    //[IsDesignScriptCompatible]
+
     //[MultiReturn(new[]{"Output1", "Output2", "Output3"})]
     [IsVisibleInDynamoLibrary(false)]
     internal class ClassTemplate
