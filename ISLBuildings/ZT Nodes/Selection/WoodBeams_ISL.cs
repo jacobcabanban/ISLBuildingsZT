@@ -18,18 +18,13 @@ using RevitServices.Transactions;
 
 namespace ISL_ZeroTouch
 {
-    //Instead of the name of the Method:
-    [NodeName("NodeName")]
-
-    //Instead of the namespace and class names, use a ‘.’ to create a subcategory:
-    [NodeCategory("NodeName.Category")]
-
-    //Provide a node description:
-    [NodeDescription("Node Description")]
-
-    //Tag design script compatibility:
+    /// <summary>
+    /// 
+    /// </summary>
+    [NodeName("WoodBeams_ISL")]
+    [NodeCategory("ISL_ZeroTouch.Selection")]
+    [NodeDescription("Drop down list for all framing with containing 'b' and 'd' as parameters.")]
     [IsDesignScriptCompatible]
-
     public class WoodBeams_ISL
     {
 

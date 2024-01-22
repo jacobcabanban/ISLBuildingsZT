@@ -22,10 +22,10 @@ namespace ISL_ZeroTouch
     //[NodeName("NodeName")]
 
     ////Instead of the namespace and class names, use a ‘.’ to create a subcategory:
-    //[NodeCategory("NodeName.Category")]
+    //[NodeCategory("ISL_ZeroTouch.###Category###")]
 
     ////Provide a node description:
-    //[NodeDescription("Node Description")]
+    //[NodeDescription("Node description.")]
 
     ////Tag design script compatibility:
     //[IsDesignScriptCompatible]
