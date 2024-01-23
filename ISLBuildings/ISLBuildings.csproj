@@ -135,7 +135,6 @@
     <Compile Include="ZT Nodes\Helpers\Unwrapper.cs" />
     <Compile Include="ZT Nodes\Helpers\Utils.cs" />
     <Compile Include="ZT Nodes\Selection\LinkedInstance.cs" />
-    <Compile Include="ZT Nodes\Selection\WoodBeams_ISL.cs" />
     <Compile Include="ZT Nodes\Sheets\Sheets.cs" />
     <Compile Include="ZT Nodes\TaskDialog\Message.cs" />
     <Compile Include="ZT Nodes\_Template\ClassTemplate.cs" />
