@@ -35,6 +35,7 @@ namespace ISL_ZeroTouch
 
 
         #region Public Methods
+
         /// <summary>
         /// String node that trims a string representation of a number to 2 figures.
         /// </summary>
@@ -42,27 +43,25 @@ namespace ISL_ZeroTouch
         /// <returns> List of formatted numbers as string.</returns>
         public static List<string> TrimStringToTwoFigures(List<string> stringOfNumbers)
         {
-            var newArr = new List<string>();
+            if (!(stringOfNumbers?.Any() ?? false)) return new List<string>();
 
-            int startIndex = 2; // Leave out two chars after the period
+            var trimmedStrings = new List<string>();
+
+            int startIndex = 0;
+            int charsToKeep = 2;
 
             foreach (var str in stringOfNumbers)
             {
-                if (!(stringOfNumbers?.Any() ?? false)) return new List<string>();
-
                 if (str.Length <= 2)
                 {
-                    newArr.Add(str);
+                    trimmedStrings.Add(str);
                 }
                 else
                 {
-                    var len = str.Length; 
-                    var numCharToRemove = len - startIndex; 
-                    newArr.Add(str.Remove(startIndex, numCharToRemove));
+                    trimmedStrings.Add(str.Substring(startIndex, charsToKeep));
                 }
-
             }
-                return newArr;
+            return trimmedStrings;
         }
 
         #endregion

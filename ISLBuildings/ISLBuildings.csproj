@@ -136,6 +136,7 @@
     <Compile Include="ZT Nodes\Helpers\Utils.cs" />
     <Compile Include="ZT Nodes\Selection\LinkedInstance.cs" />
     <Compile Include="ZT Nodes\Sheets\Sheets.cs" />
+    <Compile Include="ZT Nodes\String\Strings.cs" />
     <Compile Include="ZT Nodes\TaskDialog\Message.cs" />
     <Compile Include="ZT Nodes\_Template\ClassTemplate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
