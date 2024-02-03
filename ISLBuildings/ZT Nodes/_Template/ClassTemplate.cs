@@ -40,8 +40,11 @@ namespace ISL_ZeroTouch
         #region Public Methods
         public static void SampleMethod()
         {
-            // Get current document
-            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
+            // Get current document/UI.
+            var doc = DocumentManager.Instance.CurrentDBDocument;
+            var uiapp = DocumentManager.Instance.CurrentUIApplication;
+            var app = uiapp.Application;
+            var uidoc = uiapp.ActiveUIDocument;
 
             // New transaction
             TransactionManager.Instance.ForceCloseTransaction();
