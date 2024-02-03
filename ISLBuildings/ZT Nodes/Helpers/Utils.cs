@@ -43,6 +43,23 @@ namespace ISL_ZeroTouch
                             .ToList();
         }
 
+        /// <summary>
+        /// Convert value in MM to decimal feet.
+        /// </summary>
+        /// <param name="val">The value to convert.</param>
+        /// <returns>Values in decimal feet.</returns>
+        public static double LengthFromMM(double val)
+            => UnitUtils.ConvertToInternalUnits(val, UnitTypeId.Millimeters);
+
+        /// <summary>
+        /// Convert value in decimal feet to MM.
+        /// </summary>
+        /// <param name="val">The value to convert.</param>
+        /// <returns>Values in MM.</returns>
+        public static double LengthToMM(double val)
+            => UnitUtils.ConvertFromInternalUnits(val, UnitTypeId.Millimeters);
+
+
         #endregion
     }
 }
