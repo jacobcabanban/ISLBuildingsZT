@@ -18,6 +18,7 @@ using Revit.GeometryConversion;
 using RevitServices.Persistence;
 using RevitServices.Transactions;
 
+
 namespace ISL_ZeroTouch
 {
     /// <summary>
@@ -36,7 +37,7 @@ namespace ISL_ZeroTouch
         #region Public Methods
 
         /// <summary>
-        /// Convert MM to project units.
+        /// Convert MM to equivalent length in project units.
         /// </summary>
         /// <param name="vals">List of values in MM.</param>
         /// <returns>Values converted to project units.</returns>
@@ -44,7 +45,7 @@ namespace ISL_ZeroTouch
         {
             if (!(vals?.Any() ?? false))
             {
-                throw new ArgumentException($"Invalid argument: {nameof(vals)} from {nameof(ConvertMMtoProjectUnits)}");
+                throw new ArgumentException($"Invalid argument.", nameof(vals));
             }
 
             var doc = DocumentManager.Instance.CurrentDBDocument;
@@ -67,20 +68,50 @@ namespace ISL_ZeroTouch
         /// <summary>
         /// Convert value in MM to decimal feet.
         /// </summary>
-        /// <param name="val">The value to convert.</param>
+        /// <param name="vals">The value to convert.</param>
         /// <returns>Values in decimal feet.</returns>
-        public static double LengthFromMM(double val)
-            => UnitUtils.ConvertToInternalUnits(val, UnitTypeId.Millimeters);
+        public static List<double> LengthFromMM(List<double> vals)
+            => vals.Select(val => UnitUtils.ConvertToInternalUnits(val, UnitTypeId.Millimeters)).ToList();
 
 
         /// <summary>
         /// Convert value in decimal feet to MM.
         /// </summary>
-        /// <param name="val">The value to convert.</param>
+        /// <param name="vals">The value to convert.</param>
         /// <returns>Values in MM.</returns>
-        public static double LengthToMM(double val)
-            => UnitUtils.ConvertFromInternalUnits(val, UnitTypeId.Millimeters);
+        public static List<double> LengthToMM(List<double> vals)
+            => vals.Select(val => UnitUtils.ConvertFromInternalUnits(val, UnitTypeId.Millimeters)).ToList();
 
+
+        /// <summary>
+        /// Converts a list of values (double) from MM to length equivalent in the project's unit settings.
+        /// </summary>
+        /// <param name="vals">List of values in MM.</param>
+        /// <returns>Values converted.</returns>
+        public static ICollection<double> ForceMMToProject(List<double> vals)
+        {
+            if (!(vals?.Any() ?? false))
+            {
+                throw new ArgumentException($"Invalid argument.", nameof(vals));
+            }
+
+            var lengthUnitString = ProjectInfo.LengthUnitDisplay();
+
+            if (lengthUnitString != "Millimeters" && lengthUnitString != "Feet and fractional inches")
+            {
+                throw new ArgumentException("Invalid unit settings in ISL template.", nameof(lengthUnitString));
+            }
+
+            if (lengthUnitString == "Millimeters")
+            {
+                return vals;
+            }
+            else
+            {
+                return vals.Select(x => UnitUtils.ConvertToInternalUnits(x, UnitTypeId.Millimeters)).ToList();         
+            }
+            
+        }
         #endregion
     }
 }

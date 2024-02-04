@@ -60,8 +60,8 @@ namespace ISL_ZeroTouch
             Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
 
             var draftingViews = viewsDynamo.UnwrapCollection()
-                                                   .Select(x => x as View)
-                                                   .ToList();
+                                           .Select(x => x as View)
+                                           .ToList();
 
             var result = new List<Autodesk.Revit.DB.ReferencePlane>();
 
