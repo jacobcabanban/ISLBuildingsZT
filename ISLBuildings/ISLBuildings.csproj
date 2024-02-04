@@ -134,6 +134,7 @@
   <ItemGroup>
     <Compile Include="ZT Nodes\Elements\Element.cs" />
     <Compile Include="ZT Nodes\Helpers\ProjectInfo.cs" />
+    <Compile Include="ZT Nodes\Helpers\UnitHelpers.cs" />
     <Compile Include="ZT Nodes\Helpers\Unwrapper.cs" />
     <Compile Include="ZT Nodes\Helpers\Utils.cs" />
     <Compile Include="ZT Nodes\Selection\LinkedInstance.cs" />
