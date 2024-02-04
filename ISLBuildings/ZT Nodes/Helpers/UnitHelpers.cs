@@ -42,8 +42,13 @@ namespace ISL_ZeroTouch
         /// <returns>Values converted to project units.</returns>
         public static ICollection<double> ConvertMMtoProjectUnits(List<double> vals)
         {
-            var doc = DocumentManager.Instance.CurrentDBDocument;
+            if (!(vals?.Any() ?? false))
+            {
+                throw new ArgumentException($"Invalid argument: {nameof(vals)} from {nameof(ConvertMMtoProjectUnits)}");
+            }
 
+            var doc = DocumentManager.Instance.CurrentDBDocument;
+            
             // Get the Units object from the document
             Units projectUnits = doc.GetUnits();
 
@@ -57,6 +62,24 @@ namespace ISL_ZeroTouch
             return vals.Select(val => UnitUtils.Convert(val, UnitTypeId.Millimeters, lengthUnitsTypeId)).ToList();
 
         }
+
+
+        /// <summary>
+        /// Convert value in MM to decimal feet.
+        /// </summary>
+        /// <param name="val">The value to convert.</param>
+        /// <returns>Values in decimal feet.</returns>
+        public static double LengthFromMM(double val)
+            => UnitUtils.ConvertToInternalUnits(val, UnitTypeId.Millimeters);
+
+
+        /// <summary>
+        /// Convert value in decimal feet to MM.
+        /// </summary>
+        /// <param name="val">The value to convert.</param>
+        /// <returns>Values in MM.</returns>
+        public static double LengthToMM(double val)
+            => UnitUtils.ConvertFromInternalUnits(val, UnitTypeId.Millimeters);
 
         #endregion
     }
