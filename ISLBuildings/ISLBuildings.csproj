@@ -141,6 +141,7 @@
     <Compile Include="ZT Nodes\Sheets\Sheets.cs" />
     <Compile Include="ZT Nodes\String\Strings.cs" />
     <Compile Include="ZT Nodes\TaskDialog\Message.cs" />
+    <Compile Include="ZT Nodes\TextNote\Text.cs" />
     <Compile Include="ZT Nodes\_Template\ClassTemplate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
