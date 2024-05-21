@@ -39,29 +39,40 @@ namespace ISL_ZeroTouch
         /// <summary>
         /// String node that trims a string representation of a number to 2 figures.
         /// </summary>
-        /// <param name="stringOfNumbers"></param>
+        /// <param name="inputStrings"></param>
         /// <returns> List of formatted numbers as string.</returns>
-        public static List<string> TrimStringToTwoFigures(List<string> stringOfNumbers)
+        public static List<string> TrimStringToTwoFigures(List<string> inputStrings)
         {
-            if (!(stringOfNumbers?.Any() ?? false)) return new List<string>();
+            if (!(inputStrings?.Any() ?? false)) return new List<string>();
 
-            var trimmedStrings = new List<string>();
+            List<string> processedStrings = new List<string>();
 
-            int startIndex = 0;
-            int charsToKeep = 2;
-
-            foreach (var str in stringOfNumbers)
+            foreach (string inputString in inputStrings)
             {
-                if (str.Length <= 2)
+                int periodIndex = inputString.IndexOf(".");
+
+                if (periodIndex != -1)
                 {
-                    trimmedStrings.Add(str);
+                    // Get substring from the left of the period up to the period
+                    string leftSubstring = inputString.Substring(0, periodIndex + 1);
+
+                    // Get two characters after the period (or pad with 0 if not available)
+                    string rightSubstring = periodIndex + 3 <= inputString.Length ?
+                        inputString.Substring(periodIndex + 1, 2) :
+                        inputString.Substring(periodIndex + 1).PadRight(2, '0');
+
+                    // Concatenateleft and right substrings
+                    string processedString = leftSubstring + rightSubstring;
+                    processedStrings.Add(processedString);
                 }
                 else
                 {
-                    trimmedStrings.Add(str.Substring(startIndex, charsToKeep));
+                    // If period not found, just add the original string to the processed list
+                    processedStrings.Add(inputString);
                 }
             }
-            return trimmedStrings;
+            return processedStrings;
+
         }
 
         #endregion
